@@ -5,36 +5,55 @@ import { useFieldContext, useFormContext } from '#/hooks/demo.form-context'
 export function SubscribeButton({ label }: { label: string }) {
   const form = useFormContext()
   return (
-    <form.Subscribe selector={(state) => state.isSubmitting}>
-      {(isSubmitting) => (
+    <form.Subscribe
+      selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+    >
+      {([canSubmit, isSubmitting]) => (
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={!canSubmit || isSubmitting}
           className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
         >
-          {label}
+          {isSubmitting ? 'Submitting...' : label}
         </button>
       )}
     </form.Subscribe>
   )
 }
 
-function ErrorMessages({
-  errors,
-}: {
-  errors: Array<string | { message: string }>
-}) {
+function getErrorMessage(error: unknown) {
+  if (typeof error === 'string') {
+    return error
+  }
+
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message
+  }
+
+  return 'Invalid value'
+}
+
+function ErrorMessages({ errors, id }: { errors: Array<unknown>; id: string }) {
   return (
-    <>
-      {errors.map((error) => (
-        <div
-          key={typeof error === 'string' ? error : error.message}
-          className="text-red-500 mt-1 font-bold"
-        >
-          {typeof error === 'string' ? error : error.message}
-        </div>
-      ))}
-    </>
+    <div id={id}>
+      {errors.map((error, index) => {
+        const message = getErrorMessage(error)
+
+        return (
+          <div
+            key={`${message}-${index}`}
+            className="text-red-500 mt-1 font-bold"
+          >
+            {message}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -47,20 +66,26 @@ export function TextField({
 }) {
   const field = useFieldContext<string>()
   const errors = useStore(field.store, (state) => state.meta.errors)
+  const errorId = `${field.name}-errors`
+  const hasErrors = field.state.meta.isTouched && errors.length > 0
 
   return (
     <div>
-      <label htmlFor={label} className="block font-bold mb-1 text-xl">
+      <label htmlFor={field.name} className="block font-bold mb-1 text-xl">
         {label}
-        <input
-          value={field.state.value}
-          placeholder={placeholder}
-          onBlur={field.handleBlur}
-          onChange={(e) => field.handleChange(e.target.value)}
-          className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
       </label>
-      {field.state.meta.isTouched && <ErrorMessages errors={errors} />}
+      <input
+        id={field.name}
+        name={field.name}
+        value={field.state.value}
+        placeholder={placeholder}
+        aria-invalid={hasErrors}
+        aria-describedby={hasErrors ? errorId : undefined}
+        onBlur={field.handleBlur}
+        onChange={(e) => field.handleChange(e.target.value)}
+        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+      {hasErrors && <ErrorMessages id={errorId} errors={errors} />}
     </div>
   )
 }
@@ -74,20 +99,26 @@ export function TextArea({
 }) {
   const field = useFieldContext<string>()
   const errors = useStore(field.store, (state) => state.meta.errors)
+  const errorId = `${field.name}-errors`
+  const hasErrors = field.state.meta.isTouched && errors.length > 0
 
   return (
     <div>
-      <label htmlFor={label} className="block font-bold mb-1 text-xl">
+      <label htmlFor={field.name} className="block font-bold mb-1 text-xl">
         {label}
-        <textarea
-          value={field.state.value}
-          onBlur={field.handleBlur}
-          rows={rows}
-          onChange={(e) => field.handleChange(e.target.value)}
-          className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
       </label>
-      {field.state.meta.isTouched && <ErrorMessages errors={errors} />}
+      <textarea
+        id={field.name}
+        name={field.name}
+        value={field.state.value}
+        aria-invalid={hasErrors}
+        aria-describedby={hasErrors ? errorId : undefined}
+        onBlur={field.handleBlur}
+        rows={rows}
+        onChange={(e) => field.handleChange(e.target.value)}
+        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+      {hasErrors && <ErrorMessages id={errorId} errors={errors} />}
     </div>
   )
 }
@@ -95,6 +126,7 @@ export function TextArea({
 export function Select({
   label,
   values,
+  placeholder,
 }: {
   label: string
   values: Array<{ label: string; value: string }>
@@ -102,26 +134,36 @@ export function Select({
 }) {
   const field = useFieldContext<string>()
   const errors = useStore(field.store, (state) => state.meta.errors)
+  const errorId = `${field.name}-errors`
+  const hasErrors = field.state.meta.isTouched && errors.length > 0
 
   return (
     <div>
-      <label htmlFor={label} className="block font-bold mb-1 text-xl">
+      <label htmlFor={field.name} className="block font-bold mb-1 text-xl">
         {label}
       </label>
       <select
+        id={field.name}
         name={field.name}
         value={field.state.value}
+        aria-invalid={hasErrors}
+        aria-describedby={hasErrors ? errorId : undefined}
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
         className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       >
+        {placeholder ? (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        ) : null}
         {values.map((value) => (
           <option key={value.value} value={value.value}>
             {value.label}
           </option>
         ))}
       </select>
-      {field.state.meta.isTouched && <ErrorMessages errors={errors} />}
+      {hasErrors && <ErrorMessages id={errorId} errors={errors} />}
     </div>
   )
 }

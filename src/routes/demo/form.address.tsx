@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { useAppForm } from '#/hooks/demo.form'
 
-export const Route = createFileRoute('/demo/form')({
+export const Route = createFileRoute('/demo/form/address')({
   component: AddressForm,
 })
 
@@ -22,15 +22,14 @@ function AddressForm() {
     },
     validators: {
       onBlur: ({ value }) => {
-        const errors = {
-          fields: {},
-        } as {
-          fields: Record<string, string>
-        }
         if (value.fullName.trim().length === 0) {
-          errors.fields.fullName = 'Full name is required'
+          return {
+            fields: {
+              fullName: 'Full name is required',
+            },
+          }
         }
-        return errors
+        return undefined
       },
     },
     onSubmit: ({ value }) => {

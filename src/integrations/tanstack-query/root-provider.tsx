@@ -1,10 +1,16 @@
 import { QueryClient } from '@tanstack/react-query'
 
-export function getContext() {
-  const queryClient = new QueryClient()
-
+export function createRouterContext() {
   return {
-    queryClient,
+    queryClient: new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 30 * 1000,
+          refetchOnWindowFocus: false,
+        },
+      },
+    }),
   }
 }
-export default function TanstackQueryProvider() {}
+
+export type RouterContext = ReturnType<typeof createRouterContext>
