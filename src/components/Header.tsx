@@ -1,7 +1,28 @@
 import { Link } from '@tanstack/react-router'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+
+import { authStore, useAuthSession } from '#/lib/auth-session'
+import { logoutFromFreeApi } from '#/lib/freeapi-auth'
 import ThemeToggle from './ThemeToggle'
 
 export default function Header() {
+  const session = useAuthSession()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const logoutMutation = useMutation({
+    mutationFn: () => logoutFromFreeApi(session?.accessToken ?? null),
+    onSettled: async () => {
+      authStore.clearSession()
+      queryClient.removeQueries({ queryKey: ['auth'] })
+      await navigate({
+        to: '/login',
+        search: { redirect: '/' },
+        replace: true,
+      })
+    },
+  })
+
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--header-bg)] px-4 backdrop-blur-lg">
       <nav className="page-wrap flex flex-wrap items-center gap-x-3 gap-y-2 py-3 sm:py-4">
@@ -30,6 +51,15 @@ export default function Header() {
           >
             About
           </Link>
+          {session ? (
+            <Link
+              to="/dashboard"
+              className="nav-link"
+              activeProps={{ className: 'nav-link is-active' }}
+            >
+              Dashboard
+            </Link>
+          ) : null}
           <a
             href="https://tanstack.com/start/latest/docs/framework/react/overview"
             className="nav-link"
@@ -43,29 +73,39 @@ export default function Header() {
               Demos
             </summary>
             <div className="mt-2 min-w-56 rounded-xl border border-[var(--line)] bg-[var(--header-bg)] p-2 shadow-lg sm:absolute sm:right-0">
-              <a
-                href="/demo/tanstack-query"
+              <Link
+                to="/demo/tanstack-query"
                 className="block rounded-lg px-3 py-2 text-sm text-[var(--sea-ink-soft)] no-underline transition hover:bg-[var(--link-bg-hover)] hover:text-[var(--sea-ink)]"
               >
                 TanStack Query
-              </a>
-              <a
-                href="/demo/form/simple"
+              </Link>
+              <Link
+                to="/demo/form/simple"
                 className="block rounded-lg px-3 py-2 text-sm text-[var(--sea-ink-soft)] no-underline transition hover:bg-[var(--link-bg-hover)] hover:text-[var(--sea-ink)]"
               >
                 Simple Form
-              </a>
-              <a
-                href="/demo/form/address"
+              </Link>
+              <Link
+                to="/demo/form/address"
                 className="block rounded-lg px-3 py-2 text-sm text-[var(--sea-ink-soft)] no-underline transition hover:bg-[var(--link-bg-hover)] hover:text-[var(--sea-ink)]"
               >
                 Address Form
-              </a>
+              </Link>
             </div>
           </details>
         </div>
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+          {session ? (
+            <button
+              type="button"
+              disabled={logoutMutation.isPending}
+              onClick={() => logoutMutation.mutate()}
+              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1.5 text-sm font-semibold text-[var(--sea-ink)] shadow-[0_8px_22px_rgba(30,90,72,0.08)] transition hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {logoutMutation.isPending ? 'Signing Out' : 'Sign Out'}
+            </button>
+          ) : null}
           <a
             href="https://x.com/tan_stack"
             target="_blank"

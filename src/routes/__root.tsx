@@ -2,11 +2,13 @@ import {
   HeadContent,
   Scripts,
   createRootRouteWithContext,
+  useRouterState,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
+import { useAuthSession } from '../lib/auth-session'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -41,6 +43,14 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const session = useAuthSession()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+  const isAuthPage = pathname === '/login' || pathname === '/signup'
+  const isUnauthedHomeShell = pathname === '/' && !session
+  const hideSharedLayout = isAuthPage || isUnauthedHomeShell
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -48,9 +58,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
-        <Header />
+        {hideSharedLayout ? null : <Header />}
         {children}
-        <Footer />
+        {hideSharedLayout ? null : <Footer />}
         <TanStackDevtools
           config={{
             position: 'bottom-right',

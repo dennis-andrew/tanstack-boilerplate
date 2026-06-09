@@ -59,6 +59,33 @@ The query demo at `src/routes/demo/tanstack-query.tsx` shows the recommended pat
 - prefetch with `context.queryClient.ensureQueryData` in the route loader
 - read cached data in the component with `useSuspenseQuery`
 
+## Auth
+
+This boilerplate includes a basic FreeAPI-backed auth flow:
+
+- `/` is private and renders the existing home page after login
+- `/login` is public
+- `/signup` is public
+- `/dashboard` is private
+
+Auth-related code lives in:
+
+```text
+src/lib/auth-session.ts       Local session storage and auth store
+src/lib/freeapi-auth.ts       FreeAPI auth client
+src/routes/_authenticated.tsx Private route guard
+src/routes/index.tsx          Protected home page
+src/routes/login.tsx          Login form
+src/routes/signup.tsx         Signup form
+src/routes/_authenticated/    Protected route files
+```
+
+The `_authenticated` route is a pathless private layout. Any route placed under `src/routes/_authenticated/` is protected by the same guard while keeping its public URL clean. For example, `src/routes/_authenticated/dashboard.tsx` renders at `/dashboard`.
+
+FreeAPI is used as the demo backend with `https://api.freeapi.app/api/v1`. The login response stores the bearer token in `localStorage`; protected loaders verify it with `/users/current-user`.
+
+Because this starter uses a browser-stored token instead of an HTTP-only app cookie, private browser-token routes use `ssr: false`. That lets guards and loaders read `localStorage` on direct page reloads. For production SSR auth, replace this with a server-readable cookie/session flow.
+
 ## Forms
 
 Form components are registered through `src/hooks/demo.form.ts`.
@@ -80,5 +107,8 @@ npm test
 - `/demo/tanstack-query`
 - `/demo/form/simple`
 - `/demo/form/address`
+- `/login`
+- `/signup`
+- `/dashboard`
 
 These are intentionally small examples. Keep them as reference code or remove them when starting a real app.

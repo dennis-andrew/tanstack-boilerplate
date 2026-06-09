@@ -1,4 +1,5 @@
 import { useStore } from '@tanstack/react-form'
+import type { HTMLAttributes, HTMLInputTypeAttribute } from 'react'
 
 import { useFieldContext, useFormContext } from '#/hooks/demo.form-context'
 
@@ -39,20 +40,15 @@ function getErrorMessage(error: unknown) {
 }
 
 function ErrorMessages({ errors, id }: { errors: Array<unknown>; id: string }) {
+  const messages = Array.from(new Set(errors.map(getErrorMessage)))
+
   return (
     <div id={id}>
-      {errors.map((error, index) => {
-        const message = getErrorMessage(error)
-
-        return (
-          <div
-            key={`${message}-${index}`}
-            className="text-red-500 mt-1 font-bold"
-          >
-            {message}
-          </div>
-        )
-      })}
+      {messages.map((message) => (
+        <div key={message} className="text-red-500 mt-1 font-bold">
+          {message}
+        </div>
+      ))}
     </div>
   )
 }
@@ -60,9 +56,15 @@ function ErrorMessages({ errors, id }: { errors: Array<unknown>; id: string }) {
 export function TextField({
   label,
   placeholder,
+  type = 'text',
+  autoComplete,
+  inputMode,
 }: {
   label: string
   placeholder?: string
+  type?: HTMLInputTypeAttribute
+  autoComplete?: string
+  inputMode?: HTMLAttributes<HTMLInputElement>['inputMode']
 }) {
   const field = useFieldContext<string>()
   const errors = useStore(field.store, (state) => state.meta.errors)
@@ -77,8 +79,11 @@ export function TextField({
       <input
         id={field.name}
         name={field.name}
+        type={type}
         value={field.state.value}
         placeholder={placeholder}
+        autoComplete={autoComplete}
+        inputMode={inputMode}
         aria-invalid={hasErrors}
         aria-describedby={hasErrors ? errorId : undefined}
         onBlur={field.handleBlur}
