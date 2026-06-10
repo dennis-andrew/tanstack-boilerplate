@@ -1,50 +1,13 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
-import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import {
-  getCurrentFreeApiUser,
-  logoutFromFreeApi,
-} from '#/lib/freeapi-auth'
+import { logoutFromFreeApi } from '#/lib/freeapi-auth'
 
-const currentUserQueryOptions = (token: string) =>
-  queryOptions({
-    queryKey: ['auth', 'current-user', token],
-    queryFn: () => getCurrentFreeApiUser(token),
-    retry: false,
-  })
+const dashboardRouteApi = getRouteApi('/_authenticated/dashboard')
 
-export const Route = createFileRoute('/_authenticated/dashboard')({
-  loader: async ({ context }) => {
-    const token = context.auth.getAccessToken()
-
-    if (!token) {
-      throw redirect({
-        to: '/login',
-        search: { redirect: '/dashboard' },
-      })
-    }
-
-    try {
-      const user = await context.queryClient.ensureQueryData(
-        currentUserQueryOptions(token),
-      )
-      context.auth.updateUser(user)
-      return user
-    } catch {
-      context.auth.clearSession()
-      context.queryClient.removeQueries({ queryKey: ['auth'] })
-      throw redirect({
-        to: '/login',
-        search: { redirect: '/dashboard' },
-      })
-    }
-  },
-  component: DashboardPage,
-})
-
-function DashboardPage() {
-  const user = Route.useLoaderData()
-  const context = Route.useRouteContext()
+export function DashboardPage() {
+  const user = dashboardRouteApi.useLoaderData()
+  const context = dashboardRouteApi.useRouteContext()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const logoutMutation = useMutation({

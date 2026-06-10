@@ -2,7 +2,7 @@ import { createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 
 import { createRouterContext } from './integrations/tanstack-query/root-provider'
-import { routeTree } from './routeTree.gen'
+import { routeTree } from './routeTree'
 
 export function getRouter() {
   const context = createRouterContext()
@@ -23,5 +23,12 @@ export function getRouter() {
 declare module '@tanstack/react-router' {
   interface Register {
     router: ReturnType<typeof getRouter>
+  }
+}
+
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

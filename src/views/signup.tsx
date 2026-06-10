@@ -1,53 +1,43 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
+  getRouteApi,
   Link,
-  createFileRoute,
-  redirect,
   useNavigate,
 } from '@tanstack/react-router'
 import { useState } from 'react'
 import { z } from 'zod'
 
 import { useAppForm } from '#/hooks/demo.form'
-import { loginWithFreeApi } from '#/lib/freeapi-auth'
+import { loginWithFreeApi, signupWithFreeApi } from '#/lib/freeapi-auth'
 
-const loginSchema = z.object({
-  identifier: z.string().min(1, 'Email or username is required'),
-  password: z.string().min(1, 'Password is required'),
+const signupSchema = z.object({
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .regex(
+      /^[a-z0-9._-]+$/,
+      'Use lowercase letters, numbers, dots, underscores, or hyphens',
+    ),
+  email: z.email('Enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 })
 
-function sanitizeRedirect(value: unknown) {
-  if (
-    typeof value !== 'string' ||
-    !value.startsWith('/') ||
-    value.startsWith('//')
-  ) {
-    return '/'
-  }
+const signupRouteApi = getRouteApi('/signup')
 
-  return value
-}
-
-export const Route = createFileRoute('/login')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: sanitizeRedirect(search.redirect),
-  }),
-  beforeLoad: ({ context, search }) => {
-    if (context.auth.isAuthenticated()) {
-      throw redirect({ href: search.redirect })
-    }
-  },
-  component: LoginPage,
-})
-
-function LoginPage() {
+export function SignupPage() {
   const [submitError, setSubmitError] = useState('')
-  const context = Route.useRouteContext()
-  const search = Route.useSearch()
+  const context = signupRouteApi.useRouteContext()
+  const search = signupRouteApi.useSearch()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const loginMutation = useMutation({
-    mutationFn: loginWithFreeApi,
+  const signupMutation = useMutation({
+    mutationFn: async (value: z.infer<typeof signupSchema>) => {
+      await signupWithFreeApi(value)
+      return loginWithFreeApi({
+        identifier: value.email,
+        password: value.password,
+      })
+    },
     onSuccess: async (session) => {
       context.auth.setSession(session)
       queryClient.setQueryData(['auth', 'current-user'], session.user)
@@ -57,23 +47,24 @@ function LoginPage() {
 
   const form = useAppForm({
     defaultValues: {
-      identifier: '',
+      username: '',
+      email: '',
       password: '',
     },
     validators: {
-      onChange: loginSchema,
-      onSubmit: loginSchema,
+      onChange: signupSchema,
+      onSubmit: signupSchema,
     },
     onSubmit: async ({ value }) => {
       setSubmitError('')
 
       try {
-        await loginMutation.mutateAsync(value)
+        await signupMutation.mutateAsync(value)
       } catch (error) {
         setSubmitError(
           error instanceof Error
             ? error.message
-            : 'Unable to sign in. Please try again.',
+            : 'Unable to create your account. Please try again.',
         )
       }
     },
@@ -83,7 +74,7 @@ function LoginPage() {
     <main className="page-wrap flex min-h-screen items-center justify-center px-4 py-12">
       <section className="island-shell w-full max-w-md rounded-2xl p-6 sm:p-8">
         <h1 className="display-title mb-6 text-4xl font-bold text-[var(--sea-ink)]">
-          Sign in
+          Create account
         </h1>
 
         <form
@@ -94,11 +85,23 @@ function LoginPage() {
           }}
           className="space-y-5"
         >
-          <form.AppField name="identifier">
+          <form.AppField name="username">
             {(field) => (
               <field.TextField
-                label="Email or Username"
+                label="Username"
                 autoComplete="username"
+                placeholder="lowercase-name"
+              />
+            )}
+          </form.AppField>
+
+          <form.AppField name="email">
+            {(field) => (
+              <field.TextField
+                label="Email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
               />
             )}
           </form.AppField>
@@ -108,7 +111,7 @@ function LoginPage() {
               <field.TextField
                 label="Password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
               />
             )}
           </form.AppField>
@@ -121,14 +124,14 @@ function LoginPage() {
 
           <div className="flex items-center justify-between gap-4">
             <Link
-              to="/signup"
+              to="/login"
               search={{ redirect: search.redirect }}
               className="text-sm font-semibold"
             >
-              Create account
+              Sign in instead
             </Link>
             <form.AppForm>
-              <form.SubscribeButton label="Sign In" />
+              <form.SubscribeButton label="Create Account" />
             </form.AppForm>
           </div>
         </form>

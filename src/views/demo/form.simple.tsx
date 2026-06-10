@@ -1,18 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { useAppForm } from '#/hooks/demo.form'
-
-export const Route = createFileRoute('/demo/form/simple')({
-  component: SimpleForm,
-})
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
 })
 
-function SimpleForm() {
+export function SimpleForm() {
   const form = useAppForm({
     defaultValues: {
       title: '',

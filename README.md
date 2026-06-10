@@ -2,7 +2,7 @@
 
 A small React starter built around the TanStack ecosystem:
 
-- TanStack Start and TanStack Router for file-based routing
+- TanStack Start and TanStack Router for code-based routing
 - TanStack Query for route-aware data fetching and cache hydration
 - TanStack Form for typed, reusable form components
 - Tailwind CSS for styling
@@ -36,16 +36,18 @@ src/
   components/                  Shared UI components
   hooks/                       App-specific TanStack Form hooks
   integrations/tanstack-query/ Query client context and devtools setup
-  routes/                      File-based routes
-  routeTree.gen.ts             Generated TanStack Router route tree
+  views/                       Page components and route UI
+  routeTree.ts                 Central code-based route config
   router.tsx                   Router factory and Query integration
 ```
 
 ## Router
 
-Routes live in `src/routes`. The generated `src/routeTree.gen.ts` file is imported by `src/router.tsx`.
+Routes are defined with TanStack Router's code-based API in `src/routeTree.ts`. Page components live under `src/views` and are imported into that central route config.
 
-For this boilerplate, commit `src/routeTree.gen.ts` so a fresh clone can typecheck and build immediately. Regenerate it by running the dev server or build command after adding, removing, or renaming route files.
+When adding a route, export the page component from `src/views`, create its `createRoute` entry in `src/routeTree.ts`, and add it to the correct parent's `addChildren` call.
+
+TanStack Start still emits a generated helper for its tooling, but `vite.config.ts` points that output to the ignored `.tanstack/routeTree.gen.ts` file and uses `src/tanstack-start-root.tsx` as a minimal virtual root. The app imports `src/routeTree.ts`.
 
 ## Query
 
@@ -53,7 +55,7 @@ The router context is created in `src/integrations/tanstack-query/root-provider.
 
 `src/router.tsx` passes that context into TanStack Router and calls `setupRouterSsrQueryIntegration`, which wraps the app in `QueryClientProvider` and wires Query cache hydration for Start.
 
-The query demo at `src/routes/demo/tanstack-query.tsx` shows the recommended pattern:
+The query demo at `src/views/demo/tanstack-query.tsx` shows the recommended pattern:
 
 - define shared `queryOptions`
 - prefetch with `context.queryClient.ensureQueryData` in the route loader
@@ -73,14 +75,14 @@ Auth-related code lives in:
 ```text
 src/lib/auth-session.ts       Local session storage and auth store
 src/lib/freeapi-auth.ts       FreeAPI auth client
-src/routes/_authenticated.tsx Private route guard
-src/routes/index.tsx          Protected home page
-src/routes/login.tsx          Login form
-src/routes/signup.tsx         Signup form
-src/routes/_authenticated/    Protected route files
+src/routeTree.ts              Private route guard and route loaders
+src/views/index.tsx           Protected home page
+src/views/login.tsx           Login form
+src/views/signup.tsx          Signup form
+src/views/_authenticated/     Protected route views
 ```
 
-The `_authenticated` route is a pathless private layout. Any route placed under `src/routes/_authenticated/` is protected by the same guard while keeping its public URL clean. For example, `src/routes/_authenticated/dashboard.tsx` renders at `/dashboard`.
+The `_authenticated` route is a pathless private layout. Routes registered under it in `src/routeTree.ts` are protected by the same guard while keeping their public URLs clean. For example, `src/views/_authenticated/dashboard.tsx` renders at `/dashboard`.
 
 FreeAPI is used as the demo backend with `https://api.freeapi.app/api/v1`. The login response stores the bearer token in `localStorage`; protected loaders verify it with `/users/current-user`.
 
@@ -113,17 +115,17 @@ npm test
 
 These are intentionally small examples. Keep them as reference code or remove them when starting a real app.
 
-## File-Based Routing
+## Code-Based Routing
 
-TanStack Router reads route files from `src/routes` and turns them into typed application routes through the generated `src/routeTree.gen.ts` file.
+TanStack Router does not require file-based routing. This starter uses code-based routing so the route hierarchy is explicit in `src/routeTree.ts`.
 
-Common route file patterns:
+Common route patterns:
 
-- `src/routes/__root.tsx` defines the root layout for the app
-- `src/routes/index.tsx` maps to `/`
-- `src/routes/login.tsx` maps to `/login`
-- `src/routes/_authenticated.tsx` creates a pathless layout route for shared guards or layout
-- `src/routes/_authenticated/dashboard.tsx` maps to `/dashboard`
-- `src/routes/demo/form/address.tsx` maps to `/demo/form/address`
+- `src/routeTree.ts` creates the root route and all child route objects
+- `src/views/__root.tsx` exports the root document shell
+- `src/views/index.tsx` exports `HomePage`; `src/routeTree.ts` maps it to `path: '/'`
+- `src/views/login.tsx` exports `LoginPage`; `src/routeTree.ts` maps it to `path: '/login'`
+- `src/routeTree.ts` uses `id: '_authenticated'` for the pathless private layout route
+- `src/views/_authenticated/dashboard.tsx` exports `DashboardPage`; `src/routeTree.ts` maps it under the private layout at `path: '/dashboard'`
 
-After adding, removing, or renaming route files, run `npm run dev` or `npm run build` so TanStack Router regenerates `src/routeTree.gen.ts`. Keep the generated file committed so fresh clones can typecheck and build without first starting the dev server.
+If a page needs route data, search params, or route context, use `getRouteApi` in the page component. Keep `createRoute`, guards, loaders, and route hierarchy in `src/routeTree.ts`.

@@ -1,19 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/')({
-  ssr: false,
-  beforeLoad: ({ context }) => {
-    if (!context.auth.isAuthenticated()) {
-      throw redirect({
-        to: '/login',
-        search: { redirect: '/' },
-      })
-    }
-  },
-  component: App,
-})
-
-function App() {
+export function HomePage() {
   return (
     <main className="page-wrap px-4 pb-8 pt-14">
       <section className="island-shell rise-in relative overflow-hidden rounded-[2rem] px-6 py-10 sm:px-10 sm:py-14">
@@ -81,14 +66,15 @@ function App() {
         <p className="island-kicker mb-2">Quick Start</p>
         <ul className="m-0 list-disc space-y-2 pl-5 text-sm text-[var(--sea-ink-soft)]">
           <li>
-            Edit <code>src/routes/index.tsx</code> to customize the home page.
+            Edit <code>src/views/index.tsx</code> to customize the home page.
           </li>
           <li>
             Update <code>src/components/Header.tsx</code> and{' '}
             <code>src/components/Footer.tsx</code> for brand links.
           </li>
           <li>
-            Add routes in <code>src/routes</code> and tweak visual tokens in{' '}
+            Add page components under <code>src/views</code>, register their
+            routes in <code>src/routeTree.ts</code>, and tweak visual tokens in{' '}
             <code>src/styles.css</code>.
           </li>
         </ul>

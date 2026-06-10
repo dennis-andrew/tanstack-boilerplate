@@ -1,4 +1,3 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 
 type Todo = {
@@ -6,7 +5,7 @@ type Todo = {
   name: string
 }
 
-const todosQueryOptions = () =>
+export const todosQueryOptions = () =>
   queryOptions({
     queryKey: ['todos'],
     queryFn: async (): Promise<Array<Todo>> => [
@@ -16,13 +15,7 @@ const todosQueryOptions = () =>
     ],
   })
 
-export const Route = createFileRoute('/demo/tanstack-query')({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(todosQueryOptions()),
-  component: TanStackQueryDemo,
-})
-
-function TanStackQueryDemo() {
+export function TanStackQueryDemo() {
   const { data } = useSuspenseQuery(todosQueryOptions())
 
   return (
