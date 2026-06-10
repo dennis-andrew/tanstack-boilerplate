@@ -112,3 +112,18 @@ npm test
 - `/dashboard`
 
 These are intentionally small examples. Keep them as reference code or remove them when starting a real app.
+
+## File-Based Routing
+
+TanStack Router reads route files from `src/routes` and turns them into typed application routes through the generated `src/routeTree.gen.ts` file.
+
+Common route file patterns:
+
+- `src/routes/__root.tsx` defines the root layout for the app
+- `src/routes/index.tsx` maps to `/`
+- `src/routes/login.tsx` maps to `/login`
+- `src/routes/_authenticated.tsx` creates a pathless layout route for shared guards or layout
+- `src/routes/_authenticated/dashboard.tsx` maps to `/dashboard`
+- `src/routes/demo/form/address.tsx` maps to `/demo/form/address`
+
+After adding, removing, or renaming route files, run `npm run dev` or `npm run build` so TanStack Router regenerates `src/routeTree.gen.ts`. Keep the generated file committed so fresh clones can typecheck and build without first starting the dev server.
